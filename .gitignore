@@ -1,0 +1,5 @@
+node_modules
+package-lock.json
+extension/config.json
+frontend/config.json
+.DS_Store
