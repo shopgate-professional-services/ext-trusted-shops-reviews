@@ -5,7 +5,8 @@ import appConfig, { themeConfig } from '@shopgate/pwa-common/helpers/config';
 import { useCurrentProduct } from '@shopgate/engage/core';
 import { i18n } from '@shopgate/engage/core/helpers';
 import { RatingStars } from '@shopgate/engage/components';
-import { getProductDataById } from '@shopgate/engage/product';
+import { VisuallyHidden } from '@shopgate/engage/a11y';
+import { getProductDataById } from '@shopgate/engage/product/selectors/product';
 import { makeStyles } from '@shopgate/engage/styles';
 import { settings } from '../../settings';
 import {
@@ -19,11 +20,6 @@ import {
 
 const { colors } = themeConfig;
 
-// starsAligned: the stars sit at the top of their own box, because the box is as tall as the line
-// height while the icons are only as tall as the font size. Collapsing the box onto the icons puts
-// them back into their middle, which is what the value next to them aligns to. The theme class is
-// part of the selector so that this wins over the style of the component no matter which of the two
-// is registered first.
 const useStyles = makeStyles()(theme => ({
   container: {
     display: 'flex',
@@ -96,15 +92,20 @@ const ProductRating = ({ children }) => {
     return children;
   }
 
+  // The row is built like the Rating component of the theme: tapping it scrolls to the reviews, and
+  // it carries no keyboard handling because an app is not operated with a keyboard. What the stars
+  // read out already contains the average, so the two numbers next to them are marked as decorative
+  // and the number of ratings is offered to a screen reader in the wording of the theme.
   return (
     <div className={cx(classes.container, RATING_CLASS)} onClick={scrollToReviews} role="presentation">
       <RatingStars value={rating.average} display="big" className={classes.starsAligned} />
-      <span className={cx(classes.value, RATING_VALUE_CLASS)}>
+      <span className={cx(classes.value, RATING_VALUE_CLASS)} aria-hidden>
         {i18n.number(rating.average / RATING_SCALE_DIVISOR, RATING_DECIMALS)}
       </span>
-      <span className={cx(classes.count, RATING_COUNT_CLASS)}>
+      <span className={cx(classes.count, RATING_COUNT_CLASS)} aria-hidden>
         {`(${rating.count})`}
       </span>
+      <VisuallyHidden>{i18n.text('reviews.review_count', { count: rating.count })}</VisuallyHidden>
     </div>
   );
 };

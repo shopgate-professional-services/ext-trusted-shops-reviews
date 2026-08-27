@@ -12,7 +12,7 @@ jest.mock('react-redux', () => ({
   useSelector: selector => selector({}),
 }));
 
-jest.mock('@shopgate/engage/product', () => ({
+jest.mock('@shopgate/engage/product/selectors/product', () => ({
   getProductDataById: (state, { productId }) => (
     productId === PRODUCT_ID ? mockProduct : mockBaseProduct
   ),

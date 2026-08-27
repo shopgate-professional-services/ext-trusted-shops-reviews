@@ -21,6 +21,12 @@ describe('<EtrustedWidget />', () => {
     });
   });
 
+  it('should leave out an identifier that does not say what kind it is', () => {
+    const wrapper = shallow(<EtrustedWidget widgetId="wdg-1" identifier="4001234567890" />);
+
+    expect(wrapper.props()).toEqual({ 'data-etrusted-widget-id': 'wdg-1' });
+  });
+
   it('should bring the widget script along, exactly once', () => {
     const existing = document.getElementById(WIDGET_SCRIPT_ID);
 

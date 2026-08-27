@@ -12,7 +12,7 @@ jest.mock('react-redux', () => ({
   useSelector: selector => selector({}),
 }));
 
-jest.mock('@shopgate/engage/product', () => ({
+jest.mock('@shopgate/engage/product/selectors/product', () => ({
   getProductDataById: () => mockProduct,
 }));
 
@@ -23,8 +23,16 @@ jest.mock('@shopgate/engage/core', () => ({
 jest.mock('@shopgate/engage/core/helpers', () => ({
   i18n: {
     number: (value, fractions) => value.toFixed(fractions).replace('.', ','),
+    text: (key, params) => `${key}:${params.count}`,
   },
 }));
+
+jest.mock('@shopgate/engage/a11y', () => {
+  const VisuallyHidden = () => null;
+  VisuallyHidden.displayName = 'VisuallyHidden';
+
+  return { VisuallyHidden };
+});
 
 jest.mock('@shopgate/engage/components', () => {
   // A shallow render does not render the mock itself, so it is found by its display name.
@@ -94,6 +102,15 @@ describe('<ProductRating />', () => {
     expect(wrapper.find('RatingStars').prop('value')).toBe(96.6);
     expect(wrapper.find('.trusted-shops-reviews__rating-value').text()).toBe('4,83');
     expect(wrapper.find('.trusted-shops-reviews__rating-count').text()).toBe('(18)');
+  });
+
+  it('should leave the reading out of the rating to the stars', () => {
+    const ProductRating = loadPortal({ showRatingValue: true });
+    const wrapper = shallow(<ProductRating>{children}</ProductRating>);
+
+    expect(wrapper.find('.trusted-shops-reviews__rating-value').prop('aria-hidden')).toBe(true);
+    expect(wrapper.find('.trusted-shops-reviews__rating-count').prop('aria-hidden')).toBe(true);
+    expect(wrapper.find('VisuallyHidden').children().text()).toBe('reviews.review_count:18');
   });
 
   it('should keep the rating of the theme for a product without ratings', () => {

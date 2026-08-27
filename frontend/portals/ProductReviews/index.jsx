@@ -1,15 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux';
-import { getProductDataById } from '@shopgate/engage/product';
+import { getProductDataById } from '@shopgate/engage/product/selectors/product';
 import { makeStyles } from '@shopgate/engage/styles';
 import EtrustedWidget from '../../components/EtrustedWidget';
 import { getProductIdentifier } from '../../helpers';
 import { settings } from '../../settings';
 import { REVIEWS_ANCHOR_ID } from '../../constants';
 
-// The widget brings no outer spacing of its own, so it would sit flush against the edges of the
-// screen. The values match the other blocks of the product detail page, e.g. the description.
 const useStyles = makeStyles()(theme => ({
   container: {
     padding: theme.spacing(0, 2, 2),

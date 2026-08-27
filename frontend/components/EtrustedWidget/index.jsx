@@ -28,7 +28,7 @@ const EtrustedWidget = ({ widgetId, identifier, identifierType }) => {
 
   const attributes = { [WIDGET_ID_ATTRIBUTE]: widgetId };
 
-  if (identifier) {
+  if (identifier && identifierType) {
     attributes[`data-${identifierType}`] = identifier;
   }
 

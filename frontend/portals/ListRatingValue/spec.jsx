@@ -13,7 +13,7 @@ jest.mock('react-redux', () => ({
   useSelector: selector => selector({}),
 }));
 
-jest.mock('@shopgate/engage/product', () => ({
+jest.mock('@shopgate/engage/product/selectors/product', () => ({
   getProductDataById: () => mockProduct,
 }));
 
@@ -94,6 +94,33 @@ const setWidths = (card, width) => {
   });
 };
 
+/**
+ * Puts a button over the top edge of the details, the way the theme places the favourites button of
+ * a product card: half over the image, half over the details underneath.
+ * @param {Element} card The card.
+ * @param {number} bottom How far the button reaches below the top edge of the details.
+ * @returns {void}
+ */
+const addHangingButton = (card, bottom) => {
+  const details = card.querySelector('.information');
+  const button = document.createElement('div');
+
+  button.className = 'favorites';
+  card.appendChild(button);
+
+  details.style.paddingTop = '12px';
+  details.getBoundingClientRect = () => ({
+    top: 0,
+    bottom: 100,
+    height: 100,
+  });
+  button.getBoundingClientRect = () => ({
+    top: bottom - 36,
+    bottom,
+    height: 36,
+  });
+};
+
 describe('<ListRatingValue />', () => {
   beforeEach(() => {
     mockSettings = { showRatingValueInLists: true };
@@ -143,6 +170,41 @@ describe('<ListRatingValue />', () => {
     expect(card.querySelector('.trusted-shops-reviews__list-rating')).toBeNull();
   });
 
+  it('should move the row out from under a button that hangs into it', () => {
+    const { card, position } = createCard();
+
+    addHangingButton(card, 18);
+
+    const wrapper = mount(<ListRatingValue productId={PRODUCT_ID} />, { attachTo: position });
+    const stars = card.querySelector('.ui-shared__rating-stars');
+
+    expect(stars.style.marginTop).toBe('8px');
+
+    wrapper.unmount();
+
+    expect(stars.style.marginTop).toBe('');
+  });
+
+  it('should leave the row where it is when the button stays above it', () => {
+    const { card, position } = createCard();
+
+    addHangingButton(card, 10);
+
+    mount(<ListRatingValue productId={PRODUCT_ID} />, { attachTo: position });
+
+    expect(card.querySelector('.ui-shared__rating-stars').style.marginTop).toBe('');
+  });
+
+  it('should ignore a neighbour that only just touches the row', () => {
+    const { card, position } = createCard();
+
+    addHangingButton(card, 14);
+
+    mount(<ListRatingValue productId={PRODUCT_ID} />, { attachTo: position });
+
+    expect(card.querySelector('.ui-shared__rating-stars').style.marginTop).toBe('');
+  });
+
   it('should stay out of the card while the setting is off', () => {
     mockSettings = {};
     const { card, position } = createCard();
@@ -187,5 +249,6 @@ describe('<ListRatingValue />', () => {
     wrapper.unmount();
 
     expect(card.querySelector('.trusted-shops-reviews__list-rating')).toBeNull();
+    expect(stars.children).toHaveLength(0);
   });
 });

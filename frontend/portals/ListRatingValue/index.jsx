@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux';
 import appConfig, { themeConfig } from '@shopgate/pwa-common/helpers/config';
 import { i18n } from '@shopgate/engage/core/helpers';
-import { getProductDataById } from '@shopgate/engage/product';
+import { getProductDataById } from '@shopgate/engage/product/selectors/product';
 import { makeStyles } from '@shopgate/engage/styles';
 import { settings } from '../../settings';
 import {
@@ -28,17 +28,12 @@ const FULL = 'full';
 const VALUE = 'value';
 const NONE = 'none';
 
-// anchor: as a flex item it becomes a block and would inherit the line height of the card, which
-// puts its content on a baseline instead of the middle. Centring it itself keeps the value on the
-// same axis as the stars.
-//
-// starsAligned: the stars sit at the top of their own box, because the box is as tall as the line
-// height while the icons are only as tall as the font size. Collapsing the box onto the icons puts
-// them back into their middle. The smaller font makes room for the value, which would otherwise
-// have to be cut off - cards without a rating render no stars at all, so they all stay the same
-// size. Nothing inside may shrink, or the stars give way on a narrow card and the value ends up
-// printed on top of them. The theme class is part of the selector so that this wins over the style
-// of the component no matter which of the two is registered first.
+// Breathing space between the row of stars and whatever hangs into it from above, and how far
+// something has to reach into the row before it counts - the image of a card ends exactly where the
+// details begin, and a rounded pixel there is not something to move out of the way of.
+const CLEARANCE_GAP = 2;
+const CLEARANCE_MIN_OVERLAP = 4;
+
 const useStyles = makeStyles()({
   container: {
     display: 'inline-block',
@@ -96,6 +91,44 @@ const findStars = (start) => {
   }
 
   return null;
+};
+
+/**
+ * Measures how far something that hangs over the top edge of a card reaches into the row of stars.
+ *
+ * The theme puts the favourites button of a product card half over the image and half over the
+ * details underneath, where it covers the right hand end of the row the stars sit in - which is
+ * exactly where the average and the number of ratings go. How far it reaches down depends on the
+ * card layout and on which other extensions are attached, so it is measured instead of assumed.
+ * @param {Element} card The element the stars sit in.
+ * @returns {number} The pixels the row has to move down, 0 when nothing is in its way.
+ */
+const getClearance = (card) => {
+  const container = card.parentElement;
+
+  if (!container) {
+    return 0;
+  }
+
+  // Where the row sits without a correction. Measuring against its current position would give a
+  // different answer once it has moved, and the two answers would keep replacing each other.
+  const paddingTop = parseFloat(window.getComputedStyle(card).paddingTop) || 0;
+  const rowTop = card.getBoundingClientRect().top + paddingTop;
+
+  return Array.from(container.children).reduce((clearance, child) => {
+    if (child === card) {
+      return clearance;
+    }
+
+    const rect = child.getBoundingClientRect();
+    const overlap = rect.bottom - rowTop;
+
+    if (!rect.height || rect.top > rowTop || overlap < CLEARANCE_MIN_OVERLAP) {
+      return clearance;
+    }
+
+    return Math.max(clearance, overlap + CLEARANCE_GAP);
+  }, 0);
 };
 
 /**
@@ -162,12 +195,14 @@ const ListRatingValue = ({ productId }) => {
     return () => {
       node.remove();
       alignment.forEach(name => stars.classList.remove(name));
+      stars.style.removeProperty('margin-top');
     };
   }, [isEnabled, productId, classes.anchor, classes.starsAligned]);
 
-  // Rendered first and measured afterwards: whatever does not fit into the card is dropped, the
-  // number of ratings before the average. A cut off number would look broken, and the same card is
-  // wide enough for the full form in a grid and too narrow for it in a slider.
+  // Rendered first and measured afterwards: the row moves out from under anything that hangs into
+  // it, and whatever then still does not fit into the card is dropped, the number of ratings before
+  // the average. A cut off number would look broken, and the same card is wide enough for the full
+  // form in a grid and too narrow for it in a slider.
   useLayoutEffect(() => {
     if (!anchor || !anchor.parentElement || !anchor.parentElement.parentElement) {
       return;
@@ -175,6 +210,14 @@ const ListRatingValue = ({ productId }) => {
 
     const stars = anchor.parentElement;
     const card = stars.parentElement;
+    const clearance = getClearance(card);
+
+    if (clearance) {
+      stars.style.marginTop = `${clearance}px`;
+    } else {
+      stars.style.removeProperty('margin-top');
+    }
+
     const { paddingLeft, paddingRight } = window.getComputedStyle(card);
     const padding = (parseFloat(paddingLeft) || 0) + (parseFloat(paddingRight) || 0);
 
