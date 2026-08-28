@@ -1,0 +1,195 @@
+{
+  "version": "1.0.0",
+  "id": "@shopgate-project/trusted-shops-reviews",
+  "trusted": false,
+  "components": [
+    {
+      "id": "ProductReviews",
+      "path": "frontend/portals/ProductReviews/index.jsx",
+      "target": [
+        "product.reviews",
+        "product.reviews.all"
+      ],
+      "type": "portals"
+    },
+    {
+      "id": "ProductRating",
+      "path": "frontend/portals/ProductRating/index.jsx",
+      "target": "product.rating",
+      "type": "portals"
+    },
+    {
+      "id": "ListRatingValue",
+      "path": "frontend/portals/ListRatingValue/index.jsx",
+      "target": "product-item.price.before",
+      "type": "portals"
+    },
+    {
+      "id": "ShopReviews",
+      "path": "frontend/widgets/ShopReviews/index.jsx",
+      "type": "widgets",
+      "description": "Trusted Shops shop rating"
+    },
+    {
+      "id": "Subscribers",
+      "path": "frontend/subscribers/index.js",
+      "type": "subscribers"
+    }
+  ],
+  "configuration": {
+    "etrustedChannelId": {
+      "type": "admin",
+      "destination": "backend",
+      "default": null,
+      "params": {
+        "type": "text",
+        "label": "Trusted Shops channel ID",
+        "description": "The eTrusted channel of the shop, taken from the Trusted Shops Control Center. Without it the extension stays inactive and the shop's own ratings and reviews are kept.",
+        "required": true,
+        "options": {
+          "placeholder": "chl-00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    "productReviewWidgetId": {
+      "type": "admin",
+      "destination": "frontend",
+      "default": null,
+      "params": {
+        "type": "text",
+        "label": "Widget ID of the product review list",
+        "description": "ID of the 'Product review list' widget from the Trusted Shops Control Center. It is rendered in place of the review section on the product detail page. When empty, the shop's own review section is kept.",
+        "required": false,
+        "options": {
+          "placeholder": "wdg-00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    "showProductReviews": {
+      "type": "admin",
+      "destination": "frontend",
+      "default": true,
+      "params": {
+        "type": "checkbox",
+        "label": "Show reviews on the product detail page",
+        "description": "When switched off, the review section on the product detail page is hidden entirely - neither the Trusted Shops reviews nor the shop's own ones are shown. The rating stars are not affected.",
+        "required": false,
+        "options": {
+          "label": "Show reviews on the product detail page"
+        }
+      }
+    },
+    "showRatingValue": {
+      "type": "admin",
+      "destination": "frontend",
+      "default": false,
+      "params": {
+        "type": "checkbox",
+        "label": "Show the rating value and the number of ratings next to the stars on the product detail page, the way the web shop shows them"
+      }
+    },
+    "showRatingValueInLists": {
+      "type": "admin",
+      "destination": "frontend",
+      "default": false,
+      "params": {
+        "type": "checkbox",
+        "label": "Also show the rating value and the number of ratings next to the stars of product cards, grids and sliders"
+      }
+    },
+    "productIdentifierType": {
+      "type": "admin",
+      "destination": "both",
+      "default": "sku",
+      "params": {
+        "type": "select",
+        "label": "Product identifier used by Trusted Shops",
+        "description": "The identifier Trusted Shops stores the reviews under. It has to match the setting of the Trusted Shops plugin in the shop.",
+        "required": true,
+        "options": {
+          "multiple": false,
+          "options": [
+            {
+              "label": "SKU",
+              "value": "sku"
+            },
+            {
+              "label": "GTIN / EAN",
+              "value": "gtin"
+            },
+            {
+              "label": "MPN (manufacturer number)",
+              "value": "mpn"
+            }
+          ]
+        }
+      }
+    },
+    "productIdentifierSource": {
+      "type": "admin",
+      "destination": "both",
+      "default": "identifiers.sku",
+      "params": {
+        "type": "select",
+        "label": "Source of the product identifier",
+        "description": "The field of the Shopgate product the identifier is read from. Products without a value in that field keep the rating and the reviews of the shop.",
+        "required": true,
+        "options": {
+          "multiple": false,
+          "options": [
+            {
+              "label": "identifiers.sku",
+              "value": "identifiers.sku"
+            },
+            {
+              "label": "identifiers.ean",
+              "value": "identifiers.ean"
+            },
+            {
+              "label": "identifiers.mpn",
+              "value": "identifiers.mpn"
+            },
+            {
+              "label": "Product ID",
+              "value": "id"
+            }
+          ]
+        }
+      }
+    },
+    "shopReviewsWidgetId": {
+      "type": "admin",
+      "destination": "frontend",
+      "default": null,
+      "params": {
+        "type": "text",
+        "label": "Widget ID of the shop rating",
+        "description": "ID of a shop wide Trusted Shops widget, for example the trust badge or the shop rating. It is placed by the merchant on any page via the page builder. When empty, no shop rating is shown.",
+        "required": false,
+        "options": {
+          "placeholder": "wdg-00000000-0000-0000-0000-000000000000"
+        }
+      }
+    }
+  },
+  "steps": [
+    {
+      "path": "extension/overrideProductRating.js",
+      "description": "Replaces the rating of every product with the Trusted Shops rating, so that the rating stars of the theme show Trusted Shops values everywhere.",
+      "hooks": [
+        "shopgate.catalog.getProductsByIds.v1:afterFetchProducts",
+        "shopgate.catalog.getProductsByCategory.v1:afterFetchProducts"
+      ],
+      "input": [
+        {
+          "key": "products"
+        }
+      ],
+      "output": [
+        {
+          "key": "products"
+        }
+      ]
+    }
+  ]
+}
