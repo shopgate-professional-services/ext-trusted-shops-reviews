@@ -40,6 +40,8 @@ export const LIST_RATING_CLASS = 'trusted-shops-reviews__list-rating';
 // The rating stars of the theme, the element the list rating attaches itself to.
 export const RATING_STARS_SELECTOR = '.ui-shared__rating-stars';
 
+export const FAVORITES_BUTTON_SELECTOR = '.ui-shared__favorites-button';
+
 // How far to walk up from the portal position while looking for the stars of the same card. Deep
 // enough for both card layouts, shallow enough not to reach a neighbouring card.
 export const RATING_STARS_MAX_DEPTH = 4;

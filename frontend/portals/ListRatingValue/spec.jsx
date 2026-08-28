@@ -95,24 +95,23 @@ const setWidths = (card, width) => {
 };
 
 /**
- * Puts a button over the top edge of the details, the way the theme places the favourites button of
- * a product card: half over the image, half over the details underneath.
+ * Puts the favourites button over the top edge of the details, the way the theme places it: half
+ * over the image, half over the details underneath, where it hangs into the row of stars.
  * @param {Element} card The card.
  * @param {number} bottom How far the button reaches below the top edge of the details.
  * @returns {void}
  */
 const addHangingButton = (card, bottom) => {
-  const details = card.querySelector('.information');
+  const stars = card.querySelector('.ui-shared__rating-stars');
   const button = document.createElement('div');
 
-  button.className = 'favorites';
+  button.className = 'ui-shared__favorites-button';
   card.appendChild(button);
 
-  details.style.paddingTop = '12px';
-  details.getBoundingClientRect = () => ({
-    top: 0,
-    bottom: 100,
-    height: 100,
+  stars.getBoundingClientRect = () => ({
+    top: 12,
+    bottom: 24,
+    height: 12,
   });
   button.getBoundingClientRect = () => ({
     top: bottom - 36,

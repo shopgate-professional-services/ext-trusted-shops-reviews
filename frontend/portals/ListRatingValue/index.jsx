@@ -10,6 +10,7 @@ import { getProductDataById } from '@shopgate/engage/product/selectors/product';
 import { makeStyles } from '@shopgate/engage/styles';
 import { settings } from '../../settings';
 import {
+  FAVORITES_BUTTON_SELECTOR,
   LIST_RATING_CLASS,
   RATING_COUNT_CLASS,
   RATING_DECIMALS,
@@ -28,9 +29,9 @@ const FULL = 'full';
 const VALUE = 'value';
 const NONE = 'none';
 
-// Breathing space between the row of stars and whatever hangs into it from above, and how far
-// something has to reach into the row before it counts - the image of a card ends exactly where the
-// details begin, and a rounded pixel there is not something to move out of the way of.
+// Breathing space between the row of stars and the favourites button above it, and how far the
+// button has to reach into the row before it is worth moving out of the way - a rounded pixel is
+// not.
 const CLEARANCE_GAP = 2;
 const CLEARANCE_MIN_OVERLAP = 4;
 
@@ -94,44 +95,6 @@ const findStars = (start) => {
 };
 
 /**
- * Measures how far something that hangs over the top edge of a card reaches into the row of stars.
- *
- * The theme puts the favourites button of a product card half over the image and half over the
- * details underneath, where it covers the right hand end of the row the stars sit in - which is
- * exactly where the average and the number of ratings go. How far it reaches down depends on the
- * card layout and on which other extensions are attached, so it is measured instead of assumed.
- * @param {Element} card The element the stars sit in.
- * @returns {number} The pixels the row has to move down, 0 when nothing is in its way.
- */
-const getClearance = (card) => {
-  const container = card.parentElement;
-
-  if (!container) {
-    return 0;
-  }
-
-  // Where the row sits without a correction. Measuring against its current position would give a
-  // different answer once it has moved, and the two answers would keep replacing each other.
-  const paddingTop = parseFloat(window.getComputedStyle(card).paddingTop) || 0;
-  const rowTop = card.getBoundingClientRect().top + paddingTop;
-
-  return Array.from(container.children).reduce((clearance, child) => {
-    if (child === card) {
-      return clearance;
-    }
-
-    const rect = child.getBoundingClientRect();
-    const overlap = rect.bottom - rowTop;
-
-    if (!rect.height || rect.top > rowTop || overlap < CLEARANCE_MIN_OVERLAP) {
-      return clearance;
-    }
-
-    return Math.max(clearance, overlap + CLEARANCE_GAP);
-  }, 0);
-};
-
-/**
  * Puts the average and the number of ratings next to the stars of a product card.
  *
  * Product cards, grids and sliders render their stars without a portal around them, so there is no
@@ -185,16 +148,18 @@ const ListRatingValue = ({ productId }) => {
     // Everything inside that element is presentational; saying so explicitly keeps the markup valid
     // instead of leaving text in a place a screen reader has to ignore.
     node.setAttribute('aria-hidden', 'true');
-    (classes.anchor || '').split(' ').filter(Boolean).forEach(name => node.classList.add(name));
+    node.className = classes.anchor || '';
     stars.appendChild(node);
     setAnchor(node);
 
+    // classList, not className: the stars belong to the theme and carry their own classes, so the
+    // alignment is added to them and taken off again rather than replacing what is there.
     const alignment = (classes.starsAligned || '').split(' ').filter(Boolean);
-    alignment.forEach(name => stars.classList.add(name));
+    stars.classList.add(...alignment);
 
     return () => {
       node.remove();
-      alignment.forEach(name => stars.classList.remove(name));
+      stars.classList.remove(...alignment);
       stars.style.removeProperty('margin-top');
     };
   }, [isEnabled, productId, classes.anchor, classes.starsAligned]);
@@ -210,12 +175,19 @@ const ListRatingValue = ({ productId }) => {
 
     const stars = anchor.parentElement;
     const card = stars.parentElement;
-    const clearance = getClearance(card);
 
-    if (clearance) {
-      stars.style.marginTop = `${clearance}px`;
-    } else {
-      stars.style.removeProperty('margin-top');
+    // Cleared first, so the stars report the position the theme gives them and the measurement
+    // cannot chase its own result. The button is absolutely positioned and does not move with it.
+    stars.style.marginTop = '';
+
+    const favorites = card.parentElement &&
+      card.parentElement.querySelector(FAVORITES_BUTTON_SELECTOR);
+    const overlap = favorites
+      ? favorites.getBoundingClientRect().bottom - stars.getBoundingClientRect().top
+      : 0;
+
+    if (overlap >= CLEARANCE_MIN_OVERLAP) {
+      stars.style.marginTop = `${overlap + CLEARANCE_GAP}px`;
     }
 
     const { paddingLeft, paddingRight } = window.getComputedStyle(card);
